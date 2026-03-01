@@ -1,39 +1,51 @@
 /* ==============================
-   Blog Layout — override slide deck defaults
+   Blog Layout — clean editorial style
    ============================== */
 
 html, body {
   overflow: visible;
   height: auto;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Navigation bar */
+/* Hide particle canvas on blog pages */
+#particle-canvas {
+  display: none;
+}
+
+/* ==============================
+   Navigation
+   ============================== */
 .blog-nav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 50;
-  padding: 1rem 2rem;
-  background: rgba(10, 10, 15, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 0.85rem 2rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .blog-nav-link {
-  color: var(--accent-cyan);
+  color: #4b5563;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  letter-spacing: 0.02em;
-  transition: opacity 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .blog-nav-link:hover {
-  opacity: 0.7;
+  color: #111827;
 }
 
+/* ==============================
+   Main layout
+   ============================== */
 .blog-main {
   position: relative;
   z-index: 1;
@@ -41,111 +53,127 @@ html, body {
 }
 
 .blog-container {
-  max-width: 800px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 1.5rem;
 }
 
 /* ==============================
    Hero
    ============================== */
 .blog-hero {
-  min-height: 100vh;
+  min-height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 4rem 0;
+  padding: 8rem 0 4rem;
 }
 
 .blog-hero h1 {
-  font-size: 3.2rem;
-  font-weight: 800;
-  line-height: 1.1;
-  margin: 1.25rem 0;
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 0 30px rgba(0, 240, 255, 0.2));
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 1rem 0;
+  color: #111827;
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
+  background-clip: unset;
+  filter: none;
+  letter-spacing: -0.02em;
 }
 
 .blog-hero .subtitle {
-  font-size: 1.3rem;
-  color: var(--text-secondary);
-  font-weight: 300;
-  line-height: 1.6;
-  max-width: 600px;
+  font-size: 1.15rem;
+  color: #6b7280;
+  font-weight: 400;
+  line-height: 1.7;
+  max-width: 560px;
   margin: 0 auto;
+  letter-spacing: 0;
 }
 
 .blog-hero .badge {
-  margin-bottom: 0.5rem;
+  display: inline-block;
+  padding: 0.3rem 0.9rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: #f0f4ff;
+  color: #4f46e5;
+  border: 1px solid #e0e7ff;
 }
 
 /* ==============================
    Article sections
    ============================== */
 .blog-section {
-  padding: 5rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 3rem 0;
+  border-top: none;
 }
 
 .blog-section h2 {
-  font-size: 2.2rem;
+  font-size: 1.85rem;
   font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 1.5rem;
-  text-shadow: 0 0 40px rgba(0, 240, 255, 0.15);
+  color: #111827;
+  margin-bottom: 1.25rem;
+  text-shadow: none;
+  letter-spacing: -0.01em;
 }
 
 .blog-section h3 {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  color: var(--accent-cyan);
-  margin-top: 2.5rem;
-  margin-bottom: 1rem;
+  color: #374151;
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
 }
 
 .blog-section p {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   line-height: 1.8;
-  color: var(--text-secondary);
+  color: #4b5563;
   margin-bottom: 1.25rem;
 }
 
 .blog-section strong {
-  color: var(--text-primary);
+  color: #111827;
+  font-weight: 600;
 }
 
 /* ==============================
    Math blocks
    ============================== */
 .math-block {
-  background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 1.5rem 2rem;
-  margin: 2rem 0;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid #6366f1;
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.75rem 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   overflow-x: auto;
   text-align: center;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .math-block[data-hover="true"]:hover {
-  border-color: rgba(0, 240, 255, 0.3);
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.15), 0 0 60px rgba(0, 240, 255, 0.05);
+  border-color: #c7d2fe;
+  box-shadow: 0 1px 8px rgba(99, 102, 241, 0.08);
 }
 
-/* Inline KaTeX */
+/* KaTeX sizing */
 .blog-section .katex {
   font-size: 1.05em;
+  color: #1e1e2e;
 }
 
 .math-block .katex {
-  font-size: 1.3em;
+  font-size: 1.25em;
 }
 
 /* Math hover term effect */
@@ -158,10 +186,10 @@ html, body {
    Animated figures
    ============================== */
 .animated-figure {
-  margin: 3rem 0;
+  margin: 2.5rem 0;
   opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 .animated-figure.visible {
@@ -171,14 +199,17 @@ html, body {
 
 .animated-figure h3 {
   margin-top: 0;
+  font-size: 1rem;
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .figure-container {
-  background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   padding: 1.5rem;
-  min-height: 300px;
+  min-height: 260px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -198,28 +229,46 @@ html, body {
   width: 100%;
   height: auto;
   display: block;
-  background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
 }
 
 /* ==============================
-   Stats grid (conclusion)
+   Stats grid
    ============================== */
 .blog-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin: 3rem 0;
+  gap: 1.25rem;
+  margin: 2.5rem 0;
 }
 
 .blog-stat {
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 1.75rem 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
 }
 
 .blog-stat .stat-value {
-  font-size: 2.8rem;
+  font-size: 2.2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 0.4rem;
+}
+
+.blog-stat .stat-label {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
 }
 
 /* ==============================
@@ -227,8 +276,8 @@ html, body {
    ============================== */
 .scroll-reveal {
   opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
 .scroll-reveal.visible {
@@ -241,31 +290,35 @@ html, body {
    ============================== */
 @media (max-width: 768px) {
   .blog-container {
-    padding: 0 1.5rem;
+    padding: 0 1.25rem;
+  }
+
+  .blog-hero {
+    padding: 6rem 0 3rem;
   }
 
   .blog-hero h1 {
-    font-size: 2.2rem;
+    font-size: 2rem;
   }
 
   .blog-hero .subtitle {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
   }
 
   .blog-section {
-    padding: 3rem 0;
+    padding: 2.5rem 0;
   }
 
   .blog-section h2 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
   }
 
   .blog-section h3 {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
 
   .blog-section p {
-    font-size: 1.05rem;
+    font-size: 1rem;
   }
 
   .math-block {
@@ -274,15 +327,15 @@ html, body {
 
   .blog-stats {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .blog-stat .stat-value {
-    font-size: 2.2rem;
+    font-size: 1.8rem;
   }
 
   .figure-container {
-    min-height: 220px;
+    min-height: 200px;
     padding: 1rem;
   }
 }
@@ -296,20 +349,19 @@ html, body {
   }
 
   .blog-hero {
-    min-height: 80vh;
-    padding: 3rem 0;
+    padding: 5rem 0 2rem;
   }
 
   .blog-hero h1 {
-    font-size: 1.8rem;
+    font-size: 1.65rem;
   }
 
   .blog-section h2 {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
   }
 
   .blog-section p {
-    font-size: 1rem;
+    font-size: 0.95rem;
     line-height: 1.7;
   }
 
@@ -318,10 +370,10 @@ html, body {
   }
 
   .blog-stat .stat-value {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
   }
 
   .animated-figure {
-    margin: 2rem 0;
+    margin: 1.75rem 0;
   }
 }

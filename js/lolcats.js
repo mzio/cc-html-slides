@@ -8,17 +8,17 @@
   'use strict';
 
   const COLORS = {
-    cyan: '#00f0ff',
-    purple: '#8b5cf6',
-    pink: '#ec4899',
-    green: '#10b981',
-    amber: '#f59e0b',
-    text: '#8888a0',
-    muted: '#555566',
-    bg: '#0a0a0f',
-    surface: '#12121a',
+    cyan: '#0891b2',
+    purple: '#7c3aed',
+    pink: '#db2777',
+    green: '#059669',
+    amber: '#d97706',
+    text: '#4b5563',
+    muted: '#9ca3af',
+    bg: '#f9fafb',
+    surface: '#ffffff',
   };
-  const ACCENT_CYCLE = [COLORS.cyan, COLORS.purple, COLORS.pink, COLORS.green];
+  const ACCENT_CYCLE = [COLORS.purple, COLORS.cyan, COLORS.pink, COLORS.green];
   const initialized = new Set();
 
   /* ============================
@@ -148,9 +148,9 @@
     });
 
     // MSE arrow between them
-    const mseArrow = svgEl('line', { x1: 130, y1: 100, x2: 180, y2: 100, stroke: 'rgba(255,255,255,0.3)', 'stroke-width': 1.5 });
+    const mseArrow = svgEl('line', { x1: 130, y1: 100, x2: 180, y2: 100, stroke: 'rgba(0,0,0,0.15)', 'stroke-width': 1.5 });
     svg.appendChild(mseArrow);
-    const arrowHead1 = svgEl('polygon', { points: '180,100 174,96 174,104', fill: 'rgba(255,255,255,0.3)' });
+    const arrowHead1 = svgEl('polygon', { points: '180,100 174,96 174,104', fill: 'rgba(0,0,0,0.15)' });
     svg.appendChild(arrowHead1);
 
     // MSE label
@@ -178,7 +178,7 @@
     svg.appendChild(frozenLabel);
 
     // Params badge
-    const paramsBg = svgEl('rect', { x: 105, y: 195, width: 170, height: 28, rx: 14, fill: 'rgba(0,240,255,0.08)', stroke: 'rgba(0,240,255,0.2)', 'stroke-width': 1 });
+    const paramsBg = svgEl('rect', { x: 105, y: 195, width: 170, height: 28, rx: 14, fill: 'rgba(8,145,178,0.08)', stroke: 'rgba(8,145,178,0.2)', 'stroke-width': 1 });
     svg.appendChild(paramsBg);
     const paramsText = svgEl('text', {
       x: 190, y: 214, fill: COLORS.cyan,
@@ -188,9 +188,9 @@
     svg.appendChild(paramsText);
 
     // --- Arrow between stages ---
-    const stageArrow = svgEl('line', { x1: 370, y1: 140, x2: 400, y2: 140, stroke: 'rgba(255,255,255,0.3)', 'stroke-width': 2 });
+    const stageArrow = svgEl('line', { x1: 370, y1: 140, x2: 400, y2: 140, stroke: 'rgba(0,0,0,0.15)', 'stroke-width': 2 });
     svg.appendChild(stageArrow);
-    const arrowHead2 = svgEl('polygon', { points: '400,140 394,136 394,144', fill: 'rgba(255,255,255,0.3)' });
+    const arrowHead2 = svgEl('polygon', { points: '400,140 394,136 394,144', fill: 'rgba(0,0,0,0.15)' });
     svg.appendChild(arrowHead2);
 
     // --- Stage 2 box ---
@@ -226,9 +226,9 @@
     });
 
     // Arrow between Stage 2 blocks
-    const loraArrow = svgEl('line', { x1: 540, y1: 100, x2: 590, y2: 100, stroke: 'rgba(255,255,255,0.3)', 'stroke-width': 1.5 });
+    const loraArrow = svgEl('line', { x1: 540, y1: 100, x2: 590, y2: 100, stroke: 'rgba(0,0,0,0.15)', 'stroke-width': 1.5 });
     svg.appendChild(loraArrow);
-    const arrowHead3 = svgEl('polygon', { points: '590,100 584,96 584,104', fill: 'rgba(255,255,255,0.3)' });
+    const arrowHead3 = svgEl('polygon', { points: '590,100 584,96 584,104', fill: 'rgba(0,0,0,0.15)' });
     svg.appendChild(arrowHead3);
 
     // NTP label
@@ -248,7 +248,7 @@
     svg.appendChild(loraDesc);
 
     // Params badge
-    const paramsBg2 = svgEl('rect', { x: 485, y: 195, width: 170, height: 28, rx: 14, fill: 'rgba(16,185,129,0.08)', stroke: 'rgba(16,185,129,0.2)', 'stroke-width': 1 });
+    const paramsBg2 = svgEl('rect', { x: 485, y: 195, width: 170, height: 28, rx: 14, fill: 'rgba(5,150,105,0.08)', stroke: 'rgba(5,150,105,0.2)', 'stroke-width': 1 });
     svg.appendChild(paramsBg2);
     const paramsText2 = svgEl('text', {
       x: 570, y: 214, fill: COLORS.green,
@@ -379,11 +379,11 @@
 
     // Arrows from processing boxes to merge
     [[190, 200, 300, 240], [510, 200, 400, 240]].forEach(([x1, y1, x2, y2]) => {
-      const line = svgEl('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.2)', 'stroke-width': 1.5 });
+      const line = svgEl('line', { x1, y1, x2, y2, stroke: 'rgba(0,0,0,0.12)', 'stroke-width': 1.5 });
       svg.appendChild(line);
       const ah = svgEl('polygon', {
         points: `${x2},${y2} ${x2 - 4},${y2 - 6} ${x2 + 4},${y2 - 6}`,
-        fill: 'rgba(255,255,255,0.2)',
+        fill: 'rgba(0,0,0,0.12)',
       });
       svg.appendChild(ah);
     });
@@ -458,7 +458,7 @@
     ctx.fillRect(0, 0, w, h);
 
     // Grid lines (log scale)
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
     ctx.lineWidth = 1;
     const gridPPLs = [10, 50, 100, 500, 1000];
     ctx.fillStyle = COLORS.muted;
@@ -525,8 +525,8 @@
         ctx.lineTo(toX(0), toY(minPPL));
         ctx.closePath();
         const grad = ctx.createLinearGradient(0, pad.top, 0, h - pad.bottom);
-        grad.addColorStop(0, 'rgba(0, 240, 255, 0.12)');
-        grad.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+        grad.addColorStop(0, 'rgba(8, 145, 178, 0.15)');
+        grad.addColorStop(1, 'rgba(8, 145, 178, 0.0)');
         ctx.fillStyle = grad;
         ctx.fill();
       }
@@ -551,7 +551,7 @@
         ctx.fill();
         ctx.beginPath();
         ctx.arc(tipX, tipY, 8, 0, Math.PI * 2);
-        ctx.fillStyle = end - 1 < 40 ? 'rgba(0,240,255,0.2)' : 'rgba(16,185,129,0.2)';
+        ctx.fillStyle = end - 1 < 40 ? 'rgba(8,145,178,0.2)' : 'rgba(5,150,105,0.2)';
         ctx.fill();
       }
 
@@ -607,7 +607,7 @@
       ctx.fillRect(0, 0, w, h);
 
       // Grid
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.05)';
       ctx.lineWidth = 1;
       for (let v = minVal; v <= maxVal; v += 10) {
         const x = pad.left + ((v - minVal) / range) * plotW;
@@ -627,7 +627,7 @@
         const barWidth = ((valClamped - minVal) / range) * plotW * eased;
 
         // Track
-        ctx.fillStyle = 'rgba(255,255,255,0.03)';
+        ctx.fillStyle = 'rgba(0,0,0,0.03)';
         ctx.beginPath();
         ctx.roundRect(pad.left, y, plotW, barH, 4);
         ctx.fill();
@@ -651,7 +651,7 @@
         // Value
         if (barWidth > 30) {
           const displayVal = minVal + (bar.value - minVal) * eased;
-          ctx.fillStyle = '#fff';
+          ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 12px sans-serif';
           ctx.textAlign = 'right';
           ctx.fillText(`${displayVal.toFixed(1)}`, pad.left + barWidth - 8, y + barH / 2 + 5);

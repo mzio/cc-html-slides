@@ -6,17 +6,18 @@
   'use strict';
 
   const COLORS = {
-    cyan: '#00f0ff',
-    purple: '#8b5cf6',
-    pink: '#ec4899',
-    green: '#10b981',
-    text: '#8888a0',
-    muted: '#555566',
-    bg: '#0a0a0f',
-    surface: '#12121a',
-    card: 'rgba(255, 255, 255, 0.03)',
+    cyan: '#0891b2',
+    purple: '#7c3aed',
+    pink: '#db2777',
+    green: '#059669',
+    text: '#4b5563',
+    muted: '#9ca3af',
+    bg: '#f9fafb',
+    surface: '#ffffff',
+    line: 'rgba(0, 0, 0, 0.08)',
+    gridLine: 'rgba(0, 0, 0, 0.06)',
   };
-  const ACCENT_CYCLE = [COLORS.cyan, COLORS.purple, COLORS.pink, COLORS.green];
+  const ACCENT_CYCLE = [COLORS.purple, COLORS.cyan, COLORS.pink, COLORS.green];
 
   // Track which figures have been initialized
   const initialized = new Set();
@@ -147,12 +148,12 @@
     for (let i = 0; i < stages.length - 1; i++) {
       const x1 = stages[i].x + stages[i].w / 2;
       const x2 = stages[i + 1].x - stages[i + 1].w / 2;
-      const line = svgEl('line', { x1, y1: y, x2, y2: y, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': 1.5 });
+      const line = svgEl('line', { x1, y1: y, x2, y2: y, stroke: 'rgba(0,0,0,0.12)', 'stroke-width': 1.5 });
       svg.appendChild(line);
       // Arrow head
       const arrow = svgEl('polygon', {
         points: `${x2},${y} ${x2 - 6},${y - 4} ${x2 - 6},${y + 4}`,
-        fill: 'rgba(255,255,255,0.2)',
+        fill: 'rgba(0,0,0,0.1)',
       });
       svg.appendChild(arrow);
     }
@@ -254,7 +255,7 @@
 
     // Animated ball following descent path
     const ball = svgEl('circle', { r: 7, fill: COLORS.cyan });
-    const ballGlow = svgEl('circle', { r: 12, fill: `${COLORS.cyan}30` });
+    const ballGlow = svgEl('circle', { r: 12, fill: `${COLORS.cyan}33` });
     const anim1 = svgEl('animateMotion', { dur: '4s', repeatCount: 'indefinite', path: pathD });
     const anim2 = svgEl('animateMotion', { dur: '4s', repeatCount: 'indefinite', path: pathD });
     ballGlow.appendChild(anim2);
@@ -311,7 +312,7 @@
         positions[li + 1].forEach(to => {
           const line = svgEl('line', {
             x1: from.x, y1: from.y, x2: to.x, y2: to.y,
-            stroke: 'rgba(255,255,255,0.08)', 'stroke-width': 1,
+            stroke: 'rgba(0,0,0,0.06)', 'stroke-width': 1,
           });
           // Animated dash pulse
           const len = Math.sqrt((to.x - from.x) ** 2 + (to.y - from.y) ** 2);
@@ -404,7 +405,7 @@
     ctx.fillRect(0, 0, w, h);
 
     // Grid lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
     ctx.lineWidth = 1;
     for (let v = 0; v <= maxLoss; v += 0.5) {
       const y = toY(v);
@@ -461,8 +462,8 @@
         ctx.lineTo(toX(0), toY(minLoss));
         ctx.closePath();
         const grad = ctx.createLinearGradient(0, pad.top, 0, h - pad.bottom);
-        grad.addColorStop(0, 'rgba(0, 240, 255, 0.15)');
-        grad.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+        grad.addColorStop(0, 'rgba(8, 145, 178, 0.18)');
+        grad.addColorStop(1, 'rgba(8, 145, 178, 0.0)');
         ctx.fillStyle = grad;
         ctx.fill();
       }
@@ -487,7 +488,7 @@
         ctx.fill();
         ctx.beginPath();
         ctx.arc(tipX, tipY, 8, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
+        ctx.fillStyle = 'rgba(8, 145, 178, 0.25)';
         ctx.fill();
       }
 
@@ -536,7 +537,7 @@
     ctx.fillRect(0, 0, w, h);
 
     // Grid lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
     ctx.lineWidth = 1;
     for (let v = 0; v <= 100; v += 20) {
       const x = pad.left + (v / maxVal) * plotW;
@@ -566,7 +567,7 @@
       ctx.fillRect(0, 0, w, h);
 
       // Redraw grid
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.05)';
       ctx.lineWidth = 1;
       for (let v = 0; v <= 100; v += 20) {
         const x = pad.left + (v / maxVal) * plotW;
@@ -585,7 +586,7 @@
         const barWidth = (bar.value / maxVal) * plotW * eased;
 
         // Bar background track
-        ctx.fillStyle = 'rgba(255,255,255,0.03)';
+        ctx.fillStyle = 'rgba(0,0,0,0.03)';
         ctx.beginPath();
         ctx.roundRect(pad.left, y, plotW, barH, 4);
         ctx.fill();
@@ -608,7 +609,7 @@
 
         // Value label
         if (barWidth > 40) {
-          ctx.fillStyle = '#fff';
+          ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 12px sans-serif';
           ctx.textAlign = 'right';
           ctx.fillText(`${(bar.value * eased).toFixed(1)}%`, pad.left + barWidth - 8, y + barH / 2 + 5);
