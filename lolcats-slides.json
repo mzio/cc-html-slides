@@ -1,0 +1,22 @@
+{
+  "title": "LoLCATs — ICLR 2025",
+  "defaults": {
+    "transition": "slide"
+  },
+  "slides": [
+    { "src": "content/lolcats/01-title.md", "transition": "zoom" },
+    { "src": "content/lolcats/02-problem.md", "transition": "slide" },
+    { "src": "content/lolcats/03-softmax-attention.md", "transition": "fade" },
+    { "src": "content/lolcats/04-linear-attention.md", "transition": "slide" },
+    { "src": "content/lolcats/05-quality-gap.md", "transition": "cube" },
+    { "src": "content/lolcats/06-overview.md", "transition": "zoom" },
+    { "src": "content/lolcats/07-attention-transfer.md", "transition": "slide" },
+    { "src": "content/lolcats/08-feature-maps.md", "transition": "fade" },
+    { "src": "content/lolcats/09-sliding-window.md", "transition": "cube" },
+    { "src": "content/lolcats/10-lora.md", "transition": "slide" },
+    { "src": "content/lolcats/11-scaling.md", "transition": "cube" },
+    { "src": "content/lolcats/12-results.md", "transition": "zoom" },
+    { "src": "content/lolcats/13-efficiency.md", "transition": "slide" },
+    { "src": "content/lolcats/14-conclusion.md", "transition": "cube" }
+  ]
+}

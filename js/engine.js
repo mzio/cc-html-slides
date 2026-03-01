@@ -4,7 +4,7 @@
  * Fetches manifest + markdown, builds slides, handles navigation.
  */
 (async function () {
-  const MANIFEST_URL = 'slides.json';
+  const MANIFEST_URL = window.SLIDES_MANIFEST || 'slides.json';
 
   let manifest = null;
   let slides = [];        // { el, config } for each slide
