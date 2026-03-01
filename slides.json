@@ -1,0 +1,20 @@
+{
+  "title": "NeuralFlow AI — Seed Pitch Deck",
+  "defaults": {
+    "transition": "slide"
+  },
+  "slides": [
+    { "src": "content/slides/01-title.md", "transition": "fade" },
+    { "src": "content/slides/02-problem.md", "transition": "cube" },
+    { "src": "content/slides/03-solution.md", "transition": "slide" },
+    { "src": "content/slides/04-demo.md", "transition": "zoom" },
+    { "src": "content/slides/05-market.md", "transition": "slide" },
+    { "src": "content/slides/06-product.md", "transition": "cube" },
+    { "src": "content/slides/07-traction.md", "transition": "slide" },
+    { "src": "content/slides/08-business-model.md", "transition": "fade" },
+    { "src": "content/slides/09-team.md", "transition": "slide" },
+    { "src": "content/slides/10-financials.md", "transition": "cube" },
+    { "src": "content/slides/11-ask.md", "transition": "zoom" },
+    { "src": "content/slides/12-closing.md", "transition": "fade" }
+  ]
+}

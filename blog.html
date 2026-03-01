@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backpropagation in a Two-Layer Network — NeuralFlow AI</title>
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <!-- highlight.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Reused project styles -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/theme.css">
+
+  <!-- Blog styles -->
+  <link rel="stylesheet" href="css/blog.css">
+</head>
+<body>
+  <!-- Particle background -->
+  <canvas id="particle-canvas"></canvas>
+
+  <nav class="blog-nav">
+    <a href="index.html" class="blog-nav-link">&larr; Slide Deck</a>
+  </nav>
+
+  <main class="blog-main">
+
+    <!-- Hero -->
+    <header class="blog-hero">
+      <div class="blog-container">
+        <span class="badge">Deep Dive</span>
+        <h1>Backpropagation in a Two-Layer Network</h1>
+        <p class="subtitle">A complete derivation of weight and bias gradients with cross-entropy loss — from forward pass to parameter updates.</p>
+      </div>
+    </header>
+
+    <!-- Introduction & Notation -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>Setup &amp; Notation</h2>
+        <p>We'll derive every gradient for a <strong>two-layer fully-connected network</strong> trained with cross-entropy loss. This is the simplest architecture that demonstrates all the mechanics of backpropagation — once you understand it here, the extension to deeper networks is purely mechanical.</p>
+        <p>Our network has an input $\mathbf{x} \in \mathbb{R}^{n_0}$, one hidden layer with $n_1$ units, and an output layer with $C$ classes. The learnable parameters are:</p>
+
+        <div class="math-block" data-hover="true">
+          $$W^{(1)} \in \mathbb{R}^{n_1 \times n_0}, \quad \mathbf{b}^{(1)} \in \mathbb{R}^{n_1}, \quad W^{(2)} \in \mathbb{R}^{C \times n_1}, \quad \mathbf{b}^{(2)} \in \mathbb{R}^{C}$$
+        </div>
+
+        <p>We use $\sigma$ for the hidden-layer activation (sigmoid, ReLU, etc.) and softmax for the output layer. The goal is to derive $\frac{\partial \mathcal{L}}{\partial W^{(l)}}$ and $\frac{\partial \mathcal{L}}{\partial \mathbf{b}^{(l)}}$ for each layer $l \in \{1, 2\}$.</p>
+
+        <div class="animated-figure" data-figure="neural-network">
+          <h3>Two-Layer Architecture</h3>
+          <div class="figure-container" id="network-svg"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Forward Pass -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>The Forward Pass</h2>
+        <p>The forward pass maps an input vector $\mathbf{x}$ to a probability distribution $\hat{\mathbf{y}}$ over $C$ classes in two stages.</p>
+
+        <h3>Layer 1: Hidden Layer</h3>
+        <p>We compute the <strong>pre-activation</strong> $\mathbf{z}^{(1)}$ and pass it through a nonlinearity $\sigma$ to get the hidden representation $\mathbf{a}^{(1)}$:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\mathbf{z}^{(1)} = W^{(1)} \mathbf{x} + \mathbf{b}^{(1)}$$
+        </div>
+
+        <div class="math-block" data-hover="true">
+          $$\mathbf{a}^{(1)} = \sigma\!\left(\mathbf{z}^{(1)}\right)$$
+        </div>
+
+        <p>Each element $a_j^{(1)} = \sigma(z_j^{(1)})$ is computed independently. For sigmoid, $\sigma(z) = \frac{1}{1 + e^{-z}}$, with the convenient derivative $\sigma'(z) = \sigma(z)(1 - \sigma(z))$.</p>
+
+        <h3>Layer 2: Output Layer</h3>
+        <p>The hidden activations feed into the output layer, and softmax converts raw logits into probabilities:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\mathbf{z}^{(2)} = W^{(2)} \mathbf{a}^{(1)} + \mathbf{b}^{(2)}$$
+        </div>
+
+        <div class="math-block" data-hover="true">
+          $$\hat{y}_c = \text{softmax}(\mathbf{z}^{(2)})_c = \frac{e^{z_c^{(2)}}}{\displaystyle\sum_{j=1}^{C} e^{z_j^{(2)}}}$$
+        </div>
+
+        <p>The output $\hat{\mathbf{y}} \in \mathbb{R}^C$ is a valid probability distribution: every entry is positive and they sum to one.</p>
+
+        <div class="animated-figure" data-figure="forward-pass">
+          <h3>Forward Pass Data Flow</h3>
+          <div class="figure-container" id="forward-svg"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cross-Entropy Loss -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>Cross-Entropy Loss</h2>
+        <p>Given a one-hot ground-truth label $\mathbf{y}$ (where $y_c = 1$ for the correct class and $0$ elsewhere), the <strong>cross-entropy loss</strong> measures how far the predicted distribution is from the true one:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\mathcal{L} = -\sum_{c=1}^{C} y_c \log \hat{y}_c$$
+        </div>
+
+        <p>Since $\mathbf{y}$ is one-hot, this simplifies to $\mathcal{L} = -\log \hat{y}_k$ where $k$ is the true class. The loss is zero when the model is perfectly confident in the correct class ($\hat{y}_k = 1$) and grows unbounded as $\hat{y}_k \to 0$.</p>
+
+        <p>A key result that simplifies all downstream gradients: the derivative of the cross-entropy loss composed with softmax has an elegantly simple form. If we define $\boldsymbol{\delta}^{(2)} = \frac{\partial \mathcal{L}}{\partial \mathbf{z}^{(2)}}$, then:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\boldsymbol{\delta}^{(2)} = \hat{\mathbf{y}} - \mathbf{y}$$
+        </div>
+
+        <p>This is the <strong>softmax-cross-entropy gradient</strong> — the error signal is simply the difference between predicted and true distributions. Everything that follows is applying the chain rule to push this signal backward through the network.</p>
+
+        <div class="animated-figure" data-figure="loss-chart">
+          <h3>Training Loss Curve</h3>
+          <canvas class="blog-canvas" id="loss-canvas" width="800" height="400"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Backprop: Output Layer -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>Backpropagation: Output Layer</h2>
+        <p>With $\boldsymbol{\delta}^{(2)} = \hat{\mathbf{y}} - \mathbf{y}$ in hand, we derive the gradients for $W^{(2)}$ and $\mathbf{b}^{(2)}$.</p>
+
+        <h3>Gradient of $W^{(2)}$</h3>
+        <p>Since $\mathbf{z}^{(2)} = W^{(2)} \mathbf{a}^{(1)} + \mathbf{b}^{(2)}$, the chain rule gives us:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\frac{\partial \mathcal{L}}{\partial W^{(2)}} = \boldsymbol{\delta}^{(2)} \, \mathbf{a}^{(1)\top} = \left(\hat{\mathbf{y}} - \mathbf{y}\right) \mathbf{a}^{(1)\top}$$
+        </div>
+
+        <p>This is an outer product: $\frac{\partial \mathcal{L}}{\partial W^{(2)}} \in \mathbb{R}^{C \times n_1}$, matching the shape of $W^{(2)}$. Each entry $\frac{\partial \mathcal{L}}{\partial W_{ij}^{(2)}} = \delta_i^{(2)} \cdot a_j^{(1)}$ — the error at output $i$ times the activation at hidden unit $j$.</p>
+
+        <h3>Gradient of $\mathbf{b}^{(2)}$</h3>
+        <p>Since the bias enters $\mathbf{z}^{(2)}$ additively, its gradient is just the error signal itself:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\frac{\partial \mathcal{L}}{\partial \mathbf{b}^{(2)}} = \boldsymbol{\delta}^{(2)} = \hat{\mathbf{y}} - \mathbf{y}$$
+        </div>
+
+        <div class="animated-figure" data-figure="gradient-descent">
+          <h3>Gradient Descent on the Loss Surface</h3>
+          <div class="figure-container" id="gradient-svg"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Backprop: Hidden Layer -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>Backpropagation: Hidden Layer</h2>
+        <p>To update $W^{(1)}$ and $\mathbf{b}^{(1)}$, we need to propagate the error signal backward through the output weights and the activation function. This is where the "back" in backpropagation happens.</p>
+
+        <h3>Error Signal at the Hidden Layer</h3>
+        <p>First, we propagate $\boldsymbol{\delta}^{(2)}$ back through $W^{(2)}$ to get the error at the hidden activations:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\frac{\partial \mathcal{L}}{\partial \mathbf{a}^{(1)}} = W^{(2)\top} \boldsymbol{\delta}^{(2)} = W^{(2)\top} \left(\hat{\mathbf{y}} - \mathbf{y}\right)$$
+        </div>
+
+        <p>Then we push through the activation function using the element-wise (Hadamard) product $\odot$:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\boldsymbol{\delta}^{(1)} = \frac{\partial \mathcal{L}}{\partial \mathbf{z}^{(1)}} = \frac{\partial \mathcal{L}}{\partial \mathbf{a}^{(1)}} \odot \sigma'\!\left(\mathbf{z}^{(1)}\right) = W^{(2)\top}\!\left(\hat{\mathbf{y}} - \mathbf{y}\right) \odot \sigma'\!\left(\mathbf{z}^{(1)}\right)$$
+        </div>
+
+        <p>The $\sigma'(\mathbf{z}^{(1)})$ term gates the gradient: for sigmoid, units near saturation ($z \to \pm\infty$) have $\sigma' \approx 0$, so they receive almost no update. For ReLU, $\sigma'(z) = \mathbb{1}[z > 0]$, so dead neurons (with $z \leq 0$) get zero gradient.</p>
+
+        <h3>Gradient of $W^{(1)}$</h3>
+        <p>Now the pattern is identical to the output layer — an outer product of the error signal with the input to this layer:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\frac{\partial \mathcal{L}}{\partial W^{(1)}} = \boldsymbol{\delta}^{(1)} \, \mathbf{x}^\top$$
+        </div>
+
+        <p>This gives $\frac{\partial \mathcal{L}}{\partial W^{(1)}} \in \mathbb{R}^{n_1 \times n_0}$, matching the shape of $W^{(1)}$.</p>
+
+        <h3>Gradient of $\mathbf{b}^{(1)}$</h3>
+        <p>And the bias gradient is again just the error signal:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\frac{\partial \mathcal{L}}{\partial \mathbf{b}^{(1)}} = \boldsymbol{\delta}^{(1)}$$
+        </div>
+      </div>
+    </section>
+
+    <!-- Weight Updates & Results -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>Parameter Updates</h2>
+        <p>With all four gradients computed, we update each parameter using gradient descent with learning rate $\eta$:</p>
+
+        <div class="math-block" data-hover="true">
+          $$W^{(2)} \leftarrow W^{(2)} - \eta \frac{\partial \mathcal{L}}{\partial W^{(2)}} = W^{(2)} - \eta \left(\hat{\mathbf{y}} - \mathbf{y}\right) \mathbf{a}^{(1)\top}$$
+        </div>
+
+        <div class="math-block" data-hover="true">
+          $$\mathbf{b}^{(2)} \leftarrow \mathbf{b}^{(2)} - \eta \frac{\partial \mathcal{L}}{\partial \mathbf{b}^{(2)}} = \mathbf{b}^{(2)} - \eta \left(\hat{\mathbf{y}} - \mathbf{y}\right)$$
+        </div>
+
+        <div class="math-block" data-hover="true">
+          $$W^{(1)} \leftarrow W^{(1)} - \eta \frac{\partial \mathcal{L}}{\partial W^{(1)}} = W^{(1)} - \eta \, \boldsymbol{\delta}^{(1)} \, \mathbf{x}^\top$$
+        </div>
+
+        <div class="math-block" data-hover="true">
+          $$\mathbf{b}^{(1)} \leftarrow \mathbf{b}^{(1)} - \eta \frac{\partial \mathcal{L}}{\partial \mathbf{b}^{(1)}} = \mathbf{b}^{(1)} - \eta \, \boldsymbol{\delta}^{(1)}$$
+        </div>
+
+        <p>where $\boldsymbol{\delta}^{(1)} = W^{(2)\top}\!(\hat{\mathbf{y}} - \mathbf{y}) \odot \sigma'(\mathbf{z}^{(1)})$. This is one complete step of gradient descent. In practice, NeuralFlow uses Adam with decoupled weight decay, but the gradient computation is identical — only the step size and momentum terms differ.</p>
+
+        <h3>NeuralFlow Benchmark Results</h3>
+        <p>These backpropagation primitives, optimized for hardware-aware execution, power NeuralFlow's training pipeline. The result:</p>
+
+        <div class="animated-figure" data-figure="accuracy-chart">
+          <h3>Accuracy Comparison</h3>
+          <canvas class="blog-canvas" id="accuracy-canvas" width="800" height="400"></canvas>
+        </div>
+
+        <div class="blog-stats">
+          <div class="blog-stat glass-card" data-counter data-from="0" data-to="128000" data-suffix=" tokens" data-decimals="0">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Context Window</div>
+          </div>
+          <div class="blog-stat glass-card" data-counter data-from="0" data-to="99.2" data-suffix="%" data-decimals="1">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Accuracy</div>
+          </div>
+          <div class="blog-stat glass-card" data-counter data-from="0" data-to="47" data-suffix="ms" data-decimals="0">
+            <div class="stat-value">0</div>
+            <div class="stat-label">P95 Latency</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Reused particle system -->
+  <script src="js/effects.js"></script>
+  <!-- Blog logic -->
+  <script src="js/blog.js"></script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+/* ==============================
+   Slide Transition Animations
+   ============================== */
+
+/* Base slide positioning */
+.slide {
+  transition: none;
+  will-change: transform, opacity;
+}
+
+/* ------ FADE ------ */
+.slide.transition-fade-enter {
+  animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.slide.transition-fade-exit {
+  animation: fadeOut 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ------ SLIDE (horizontal) ------ */
+.slide.transition-slide-enter-forward {
+  animation: slideInRight 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.slide.transition-slide-exit-forward {
+  animation: slideOutLeft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.slide.transition-slide-enter-backward {
+  animation: slideInLeft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.slide.transition-slide-exit-backward {
+  animation: slideOutRight 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(80px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOutLeft {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-80px); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-80px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(80px); }
+}
+
+/* ------ CUBE (3D rotate) ------ */
+.slide.transition-cube-enter-forward {
+  animation: cubeInRight 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transform-origin: left center;
+}
+
+.slide.transition-cube-exit-forward {
+  animation: cubeOutLeft 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transform-origin: right center;
+}
+
+.slide.transition-cube-enter-backward {
+  animation: cubeInLeft 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transform-origin: right center;
+}
+
+.slide.transition-cube-exit-backward {
+  animation: cubeOutRight 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transform-origin: left center;
+}
+
+@keyframes cubeInRight {
+  from { opacity: 0; transform: rotateY(-90deg) scale(0.9); }
+  to   { opacity: 1; transform: rotateY(0deg) scale(1); }
+}
+
+@keyframes cubeOutLeft {
+  from { opacity: 1; transform: rotateY(0deg) scale(1); }
+  to   { opacity: 0; transform: rotateY(90deg) scale(0.9); }
+}
+
+@keyframes cubeInLeft {
+  from { opacity: 0; transform: rotateY(90deg) scale(0.9); }
+  to   { opacity: 1; transform: rotateY(0deg) scale(1); }
+}
+
+@keyframes cubeOutRight {
+  from { opacity: 1; transform: rotateY(0deg) scale(1); }
+  to   { opacity: 0; transform: rotateY(-90deg) scale(0.9); }
+}
+
+/* ------ ZOOM ------ */
+.slide.transition-zoom-enter {
+  animation: zoomIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.slide.transition-zoom-exit {
+  animation: zoomOut 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes zoomOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.15); }
+}
+
+/* ------ Staggered content entrance ------ */
+.slide.active .slide-content > * {
+  animation: contentFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.slide.active .slide-content > *:nth-child(1) { animation-delay: 0.1s; }
+.slide.active .slide-content > *:nth-child(2) { animation-delay: 0.2s; }
+.slide.active .slide-content > *:nth-child(3) { animation-delay: 0.3s; }
+.slide.active .slide-content > *:nth-child(4) { animation-delay: 0.35s; }
+.slide.active .slide-content > *:nth-child(5) { animation-delay: 0.4s; }
+.slide.active .slide-content > *:nth-child(6) { animation-delay: 0.45s; }
+.slide.active .slide-content > *:nth-child(7) { animation-delay: 0.5s; }
+.slide.active .slide-content > *:nth-child(8) { animation-delay: 0.55s; }
+.slide.active .slide-content > *:nth-child(9) { animation-delay: 0.6s; }
+.slide.active .slide-content > *:nth-child(10) { animation-delay: 0.65s; }
+
+@keyframes contentFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuralFlow AI — Seed Pitch Deck</title>
+
+  <!-- External dependencies (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Project styles -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/transitions.css">
+</head>
+<body>
+  <!-- Particle background -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- Slide deck container -->
+  <div id="deck">
+    <div id="slides-container"></div>
+  </div>
+
+  <!-- Progress bar -->
+  <div id="progress-bar">
+    <div id="progress-fill"></div>
+  </div>
+
+  <!-- Slide counter -->
+  <div id="slide-counter"></div>
+
+  <!-- Navigation hints (fade out after first interaction) -->
+  <div id="nav-hint">Use arrow keys or swipe to navigate</div>
+
+  <!-- Blog link -->
+  <a href="blog.html" class="blog-link">Read the Blog &rarr;</a>
+
+  <!-- Project scripts -->
+  <script src="js/renderer.js"></script>
+  <script src="js/transitions.js"></script>
+  <script src="js/effects.js"></script>
+  <script src="js/ai-demos.js"></script>
+  <script src="js/engine.js"></script>
+</body>
+</html>
