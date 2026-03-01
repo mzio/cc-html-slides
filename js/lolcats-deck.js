@@ -1,12 +1,71 @@
 /**
  * lolcats-deck.js — Custom components for the LoLCATs ICLR deck.
  *
- * Loaded BEFORE engine.js. Wraps Renderer.activateComponents to handle
- * custom component types: animated-table, comparison-bars, diagram.
- * Also adds KaTeX post-render hook and slide-enter animations.
+ * Loaded BEFORE engine.js. Wraps Renderer.render to protect LaTeX math
+ * from marked.js, adds custom component handlers, and hooks slide-enter
+ * for KaTeX rendering + animations.
  */
 const LolcatsDeck = (() => {
   'use strict';
+
+  /* ============================
+     Rainbow palette
+     ============================ */
+  const RAINBOW = [
+    '#ef4444', '#f97316', '#eab308', '#22c55e',
+    '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899',
+  ];
+
+  /* Light-theme diagram colors */
+  const C = {
+    text: '#374151',
+    muted: '#9ca3af',
+    border: 'rgba(0,0,0,0.1)',
+    surface: '#f3f4f6',
+    red: '#ef4444',
+    orange: '#f97316',
+    yellow: '#eab308',
+    green: '#22c55e',
+    blue: '#3b82f6',
+    indigo: '#6366f1',
+    violet: '#8b5cf6',
+    pink: '#ec4899',
+  };
+
+  /* ============================
+     Protect LaTeX from marked.js
+     ============================ */
+  const _origRender = Renderer.render.bind(Renderer);
+
+  Renderer.render = function (md) {
+    const mathStore = [];
+
+    // 1. Protect HTML blocks containing math (e.g. <div class="math-display">$$...$$</div>)
+    let safe = md.replace(/<div[^>]*class="math-display"[^>]*>[\s\S]*?<\/div>/gi, (match) => {
+      mathStore.push(match);
+      return `<!--MATH_${mathStore.length - 1}-->`;
+    });
+
+    // 2. Protect display math $$...$$ (multiline)
+    safe = safe.replace(/\$\$[\s\S]*?\$\$/g, (match) => {
+      mathStore.push(match);
+      return `<!--MATH_${mathStore.length - 1}-->`;
+    });
+
+    // 3. Protect inline math $...$  (single line, non-greedy)
+    safe = safe.replace(/\$([^\$\n]+?)\$/g, (match) => {
+      mathStore.push(match);
+      return `<!--MATH_${mathStore.length - 1}-->`;
+    });
+
+    // Run original render (preprocessMarkdown → marked.parse)
+    let html = _origRender(safe);
+
+    // Restore math from placeholders
+    html = html.replace(/<!--MATH_(\d+)-->/g, (_, idx) => mathStore[parseInt(idx, 10)]);
+
+    return html;
+  };
 
   /* ============================
      Component Registration
@@ -14,7 +73,6 @@ const LolcatsDeck = (() => {
   const _origActivate = Renderer.activateComponents.bind(Renderer);
 
   Renderer.activateComponents = function (slideEl) {
-    // Pre-process custom components so the original doesn't mark them as unknown
     slideEl.querySelectorAll('.component[data-component]').forEach(el => {
       const name = el.dataset.component;
       const content = (el.dataset.content || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
@@ -76,8 +134,7 @@ const LolcatsDeck = (() => {
     if (rows.length < 2) return;
 
     const headers = rows[0].split('|').map(s => s.trim());
-    const divider = rows[1]; // skip the |---|---| row
-    const dataRows = rows.slice(2);
+    const dataRows = rows.slice(2); // skip divider row
 
     const highlightIdx = attrs.highlight ? parseInt(attrs.highlight, 10) : -1;
 
@@ -100,26 +157,28 @@ const LolcatsDeck = (() => {
   function animateTableRows(slideEl) {
     const tables = slideEl.querySelectorAll('.animated-table-wrap tbody tr');
     tables.forEach((tr, i) => {
-      setTimeout(() => tr.classList.add('visible'), 150 + i * 120);
+      tr.classList.remove('visible');
+      setTimeout(() => tr.classList.add('visible'), 200 + i * 150);
     });
   }
 
   /* ============================
-     Comparison Bars
+     Comparison Bars — Rainbow
      ============================ */
   function renderComparisonBars(el, content, attrs) {
     const rows = content.split('\n').filter(Boolean);
     const maxVal = parseFloat(attrs.max) || 100;
 
     let html = '<div class="comparison-bars">';
-    rows.forEach(row => {
+    rows.forEach((row, i) => {
       const parts = row.split('|').map(s => s.trim());
       const label = parts[0] || '';
       const value = parseFloat(parts[1]) || 0;
-      const color = parts[2] || 'var(--accent-cyan)';
+      // Use rainbow color cycling, or explicit color from content
+      const color = parts[2] || RAINBOW[i % RAINBOW.length];
       const pct = (value / maxVal) * 100;
 
-      html += `<div class="comp-bar" data-value="${pct}">
+      html += `<div class="comp-bar" data-value="${pct}" data-idx="${i}">
         <span class="comp-label">${label}</span>
         <div class="comp-track">
           <div class="comp-fill" style="background:${color};">
@@ -137,11 +196,13 @@ const LolcatsDeck = (() => {
     bars.forEach((bar, i) => {
       const fill = bar.querySelector('.comp-fill');
       const pct = bar.dataset.value;
+      bar.classList.remove('visible');
       if (fill) {
         fill.style.width = '0%';
         setTimeout(() => {
+          bar.classList.add('visible');
           fill.style.width = pct + '%';
-        }, 200 + i * 100);
+        }, 250 + i * 180);
       }
     });
   }
@@ -162,46 +223,67 @@ const LolcatsDeck = (() => {
       case 'pipeline': buildPipelineDiagram(el); break;
       case 'hybrid': buildHybridDiagram(el); break;
       case 'blockwise': buildBlockwiseDiagram(el); break;
-      default: el.innerHTML = `<p style="color:var(--text-muted);">[Diagram: ${type}]</p>`;
+      default: el.innerHTML = `<p style="color:${C.muted};">[Diagram: ${type}]</p>`;
     }
   }
 
+  /* ---- Pipeline Diagram ---- */
   function buildPipelineDiagram(container) {
     const svg = svgEl('svg', { viewBox: '0 0 800 180' });
 
     const stages = [
-      { label: 'Pretrained\nTransformer', x: 80, w: 120, color: '#8888a0' },
-      { label: 'Attention\nTransfer', x: 280, w: 110, color: '#00f0ff' },
-      { label: 'Linearized\nModel', x: 470, w: 110, color: '#8b5cf6' },
-      { label: 'LoRA\nFinetuning', x: 640, w: 100, color: '#10b981' },
-      { label: 'Final\nModel', x: 790, w: 90, color: '#ec4899' },
+      { label: 'Pretrained\nTransformer', x: 80, w: 120, color: C.muted },
+      { label: 'Attention\nTransfer', x: 280, w: 110, color: C.blue },
+      { label: 'Linearized\nModel', x: 470, w: 110, color: C.violet },
+      { label: 'LoRA\nFinetuning', x: 640, w: 100, color: C.green },
+      { label: 'Final\nModel', x: 790, w: 90, color: C.pink },
     ];
+
+    // Background glow circles
+    stages.forEach(s => {
+      const glow = svgEl('circle', { cx: s.x, cy: 90, r: 50, fill: s.color, opacity: 0.06 });
+      svg.appendChild(glow);
+    });
 
     // Arrows
     for (let i = 0; i < stages.length - 1; i++) {
       const x1 = stages[i].x + stages[i].w / 2;
       const x2 = stages[i + 1].x - stages[i + 1].w / 2;
-      const line = svgEl('line', { x1, y1: 90, x2, y2: 90, stroke: 'rgba(255,255,255,0.2)', 'stroke-width': 2 });
+      const line = svgEl('line', {
+        x1, y1: 90, x2, y2: 90,
+        stroke: 'rgba(0,0,0,0.12)', 'stroke-width': 2,
+      });
       svg.appendChild(line);
-      const arrow = svgEl('polygon', { points: `${x2},90 ${x2 - 8},85 ${x2 - 8},95`, fill: 'rgba(255,255,255,0.2)' });
+      const arrow = svgEl('polygon', {
+        points: `${x2},90 ${x2 - 8},85 ${x2 - 8},95`,
+        fill: 'rgba(0,0,0,0.12)',
+      });
       svg.appendChild(arrow);
 
       // Animated dot
-      const dot = svgEl('circle', { r: 3, fill: stages[i].color });
-      const anim = svgEl('animateMotion', { dur: '2s', repeatCount: 'indefinite', begin: `${i * 0.5}s`, path: `M${x1},90 L${x2},90` });
+      const dot = svgEl('circle', { r: 4, fill: stages[i + 1].color, opacity: 0.8 });
+      const anim = svgEl('animateMotion', {
+        dur: '2s', repeatCount: 'indefinite',
+        begin: `${i * 0.5}s`,
+        path: `M${x1},90 L${x2},90`,
+      });
       dot.appendChild(anim);
       svg.appendChild(dot);
     }
 
     // Boxes
     stages.forEach(s => {
-      const rect = svgEl('rect', { x: s.x - s.w / 2, y: 60, width: s.w, height: 60, rx: 10, fill: 'none', stroke: s.color, 'stroke-width': 2 });
+      const rect = svgEl('rect', {
+        x: s.x - s.w / 2, y: 60, width: s.w, height: 60, rx: 12,
+        fill: '#ffffff', stroke: s.color, 'stroke-width': 2,
+      });
       svg.appendChild(rect);
       const lines = s.label.split('\n');
       lines.forEach((line, li) => {
         const text = svgEl('text', {
           x: s.x, y: 90 + (li - (lines.length - 1) / 2) * 16,
-          fill: s.color, 'text-anchor': 'middle', 'font-size': '12', 'font-weight': '600', 'font-family': 'sans-serif',
+          fill: s.color, 'text-anchor': 'middle',
+          'font-size': '12', 'font-weight': '600', 'font-family': 'Roboto, sans-serif',
         });
         text.textContent = line;
         svg.appendChild(text);
@@ -209,14 +291,14 @@ const LolcatsDeck = (() => {
     });
 
     // Stage labels
-    const sLabels = [
-      { text: 'Stage 1: MSE Loss', x: 280, color: '#00f0ff' },
-      { text: 'Stage 2: NTP Loss', x: 640, color: '#10b981' },
-    ];
-    sLabels.forEach(sl => {
+    [
+      { text: 'Stage 1: MSE Loss', x: 280, color: C.blue },
+      { text: 'Stage 2: NTP Loss', x: 640, color: C.green },
+    ].forEach(sl => {
       const text = svgEl('text', {
         x: sl.x, y: 150, fill: sl.color,
-        'text-anchor': 'middle', 'font-size': '11', 'font-weight': '500', 'font-family': 'sans-serif',
+        'text-anchor': 'middle', 'font-size': '11', 'font-weight': '500',
+        'font-family': 'Roboto, sans-serif',
       });
       text.textContent = sl.text;
       svg.appendChild(text);
@@ -225,10 +307,10 @@ const LolcatsDeck = (() => {
     container.appendChild(svg);
   }
 
+  /* ---- Hybrid Attention Diagram ---- */
   function buildHybridDiagram(container) {
     const svg = svgEl('svg', { viewBox: '0 0 700 200' });
 
-    // Token row
     const tokCount = 20;
     const tokW = 26;
     const tokGap = 3;
@@ -238,89 +320,143 @@ const LolcatsDeck = (() => {
     for (let i = 0; i < tokCount; i++) {
       const x = startX + i * (tokW + tokGap);
       const isWindow = i >= tokCount - 4;
-      const color = isWindow ? '#ec4899' : '#8b5cf6';
-      const opacity = isWindow ? 0.65 : 0.25;
-      const rect = svgEl('rect', { x, y: tokY, width: tokW, height: 16, rx: 3, fill: color, opacity });
+      const color = isWindow ? C.pink : RAINBOW[i % RAINBOW.length];
+      const opacity = isWindow ? 0.7 : 0.35;
+      const rect = svgEl('rect', {
+        x, y: tokY, width: tokW, height: 16, rx: 3,
+        fill: color, opacity,
+      });
       svg.appendChild(rect);
     }
 
-    // Labels
     const midLin = startX + (tokCount - 4) * (tokW + tokGap) / 2;
     const midWin = startX + (tokCount - 2) * (tokW + tokGap);
     [
-      { text: 'Linear Attention — O(d·d\')', x: midLin, y: 55, color: '#8b5cf6' },
-      { text: 'Softmax Window — O(w²d)', x: midWin, y: 55, color: '#ec4899' },
+      { text: "Linear Attention — O(d·d')", x: midLin, y: 55, color: C.violet },
+      { text: 'Softmax Window — O(w²d)', x: midWin, y: 55, color: C.pink },
     ].forEach(l => {
-      const t = svgEl('text', { x: l.x, y: l.y, fill: l.color, 'text-anchor': 'middle', 'font-size': '11', 'font-weight': '600', 'font-family': 'sans-serif' });
+      const t = svgEl('text', {
+        x: l.x, y: l.y, fill: l.color, 'text-anchor': 'middle',
+        'font-size': '11', 'font-weight': '600', 'font-family': 'Roboto, sans-serif',
+      });
       t.textContent = l.text;
       svg.appendChild(t);
     });
 
     // Processing boxes
     const boxes = [
-      { label: 'φ_q(q)ᵀ S_n', x: 200, y: 85, w: 160, color: '#8b5cf6' },
-      { label: 'exp(qᵀk/√d)', x: 500, y: 85, w: 160, color: '#ec4899' },
+      { label: 'φ_q(q)ᵀ S_n', x: 200, y: 85, w: 160, color: C.violet },
+      { label: 'exp(qᵀk/√d)', x: 500, y: 85, w: 160, color: C.pink },
     ];
     boxes.forEach(b => {
-      const rect = svgEl('rect', { x: b.x - b.w / 2, y: b.y, width: b.w, height: 40, rx: 8, fill: 'none', stroke: b.color, 'stroke-width': 2 });
+      const rect = svgEl('rect', {
+        x: b.x - b.w / 2, y: b.y, width: b.w, height: 40, rx: 10,
+        fill: '#ffffff', stroke: b.color, 'stroke-width': 2,
+      });
       svg.appendChild(rect);
-      const text = svgEl('text', { x: b.x, y: b.y + 25, fill: b.color, 'text-anchor': 'middle', 'font-size': '13', 'font-weight': '600', 'font-family': 'sans-serif' });
+      const text = svgEl('text', {
+        x: b.x, y: b.y + 25, fill: b.color, 'text-anchor': 'middle',
+        'font-size': '13', 'font-weight': '600', 'font-family': 'Roboto, sans-serif',
+      });
       text.textContent = b.label;
       svg.appendChild(text);
     });
 
-    // Merge
-    const mergeBox = svgEl('rect', { x: 270, y: 150, width: 160, height: 36, rx: 8, fill: 'none', stroke: '#10b981', 'stroke-width': 2 });
-    svg.appendChild(mergeBox);
-    const mergeText = svgEl('text', { x: 350, y: 173, fill: '#10b981', 'text-anchor': 'middle', 'font-size': '12', 'font-weight': '700', 'font-family': 'sans-serif' });
+    // Merge box
+    const mergeRect = svgEl('rect', {
+      x: 270, y: 150, width: 160, height: 36, rx: 10,
+      fill: '#ffffff', stroke: C.green, 'stroke-width': 2,
+    });
+    svg.appendChild(mergeRect);
+    const mergeText = svgEl('text', {
+      x: 350, y: 173, fill: C.green, 'text-anchor': 'middle',
+      'font-size': '12', 'font-weight': '700', 'font-family': 'Roboto, sans-serif',
+    });
     mergeText.textContent = 'Combined ŷ_n';
     svg.appendChild(mergeText);
 
     // Arrows to merge
     [[200, 125, 310, 150], [500, 125, 390, 150]].forEach(([x1, y1, x2, y2]) => {
-      const line = svgEl('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': 1.5 });
+      const line = svgEl('line', {
+        x1, y1, x2, y2,
+        stroke: 'rgba(0,0,0,0.12)', 'stroke-width': 1.5,
+      });
       svg.appendChild(line);
+      // Arrow head
+      const dx = x2 - x1, dy = y2 - y1;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      const ux = dx / len, uy = dy / len;
+      const px = -uy, py = ux;
+      const arrow = svgEl('polygon', {
+        points: `${x2},${y2} ${x2 - ux * 7 + px * 4},${y2 - uy * 7 + py * 4} ${x2 - ux * 7 - px * 4},${y2 - uy * 7 - py * 4}`,
+        fill: 'rgba(0,0,0,0.12)',
+      });
+      svg.appendChild(arrow);
     });
 
     container.appendChild(svg);
   }
 
+  /* ---- Blockwise Training Diagram ---- */
   function buildBlockwiseDiagram(container) {
     const svg = svgEl('svg', { viewBox: '0 0 700 180' });
 
-    // Layer blocks
     const blockCount = 4;
     const blockW = 140;
     const gap = 20;
     const startX = 350 - (blockCount * (blockW + gap) - gap) / 2;
 
-    const colors = ['#00f0ff', '#8b5cf6', '#ec4899', '#10b981'];
+    const colors = [C.blue, C.violet, C.pink, C.green];
     const labels = ['Layers 1–20', 'Layers 21–40', 'Layers 41–60', 'Layers 61–80'];
 
     for (let i = 0; i < blockCount; i++) {
       const x = startX + i * (blockW + gap);
+      const color = colors[i];
+
+      // Glow bg
+      const bg = svgEl('rect', {
+        x: x - 2, y: 28, width: blockW + 4, height: 84, rx: 12,
+        fill: color, opacity: 0.05,
+      });
+      svg.appendChild(bg);
 
       // Block outline
-      const rect = svgEl('rect', { x, y: 30, width: blockW, height: 80, rx: 10, fill: 'none', stroke: colors[i], 'stroke-width': 2, 'stroke-dasharray': '6,3', opacity: 0.6 });
+      const rect = svgEl('rect', {
+        x, y: 30, width: blockW, height: 80, rx: 12,
+        fill: '#ffffff', stroke: color, 'stroke-width': 2,
+        'stroke-dasharray': '6,3', opacity: 0.8,
+      });
       svg.appendChild(rect);
 
       // Label
-      const text = svgEl('text', { x: x + blockW / 2, y: 65, fill: colors[i], 'text-anchor': 'middle', 'font-size': '12', 'font-weight': '600', 'font-family': 'sans-serif' });
+      const text = svgEl('text', {
+        x: x + blockW / 2, y: 65, fill: color, 'text-anchor': 'middle',
+        'font-size': '12', 'font-weight': '700', 'font-family': 'Roboto, sans-serif',
+      });
       text.textContent = labels[i];
       svg.appendChild(text);
 
       // Sub-label
-      const sub = svgEl('text', { x: x + blockW / 2, y: 85, fill: '#8888a0', 'text-anchor': 'middle', 'font-size': '10', 'font-family': 'sans-serif' });
+      const sub = svgEl('text', {
+        x: x + blockW / 2, y: 85, fill: C.muted, 'text-anchor': 'middle',
+        'font-size': '10', 'font-family': 'Roboto, sans-serif',
+      });
       sub.textContent = 'Independent MSE';
       svg.appendChild(sub);
 
-      // Check mark
-      const check = svgEl('text', { x: x + blockW / 2, y: 145, fill: colors[i], 'text-anchor': 'middle', 'font-size': '18', 'font-family': 'sans-serif' });
-      check.textContent = '✓';
+      // Checkmark
+      const check = svgEl('text', {
+        x: x + blockW / 2, y: 145, fill: color, 'text-anchor': 'middle',
+        'font-size': '20', 'font-family': 'Roboto, sans-serif',
+      });
+      check.textContent = '\u2713';
       svg.appendChild(check);
 
-      // "Parallel" label
-      const par = svgEl('text', { x: x + blockW / 2, y: 165, fill: '#555566', 'text-anchor': 'middle', 'font-size': '9', 'font-family': 'sans-serif' });
+      // GPU label
+      const par = svgEl('text', {
+        x: x + blockW / 2, y: 165, fill: C.muted, 'text-anchor': 'middle',
+        'font-size': '9', 'font-family': 'Roboto, sans-serif',
+      });
       par.textContent = 'GPU ' + (i + 1);
       svg.appendChild(par);
     }
@@ -332,14 +468,24 @@ const LolcatsDeck = (() => {
      KaTeX Boot (deferred)
      ============================ */
   function initKaTeX() {
-    // Retry until KaTeX is loaded (defer scripts)
     if (typeof renderMathInElement !== 'function') {
       setTimeout(initKaTeX, 100);
       return;
     }
-    // KaTeX is ready — it'll be invoked per-slide in onSlideEnter
+    // KaTeX ready — will be invoked per-slide in onSlideEnter.
+    // Also render the initial slide right away in case it already loaded.
+    const active = document.querySelector('.slide.active');
+    if (active) {
+      renderMathInElement(active, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false },
+        ],
+        throwOnError: false,
+      });
+    }
   }
   setTimeout(initKaTeX, 200);
 
-  return { };
+  return {};
 })();

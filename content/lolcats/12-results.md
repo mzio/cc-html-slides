@@ -3,11 +3,11 @@
 ### 5-shot MMLU Accuracy
 
 :::comparison-bars{max=80}
-LoLCATs (ours) | 73.1 | var(--accent-cyan)
-Llama 3 8B (original) | 66.6 | var(--accent-purple)
-Mamba2 2.7B | 63.5 | var(--accent-pink)
-SUPRA 8B | 53.7 | #f59e0b
-T2R 8B | 52.3 | var(--accent-green)
+LoLCATs (ours) | 73.1 | #6366f1
+Llama 3 8B (original) | 66.6 | #8b5cf6
+Mamba2 2.7B | 63.5 | #ec4899
+SUPRA 8B | 53.7 | #f97316
+T2R 8B | 52.3 | #22c55e
 :::
 
 :::animated-table{highlight=0}
