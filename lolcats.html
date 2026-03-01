@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoLCATs: Linearizing Large Language Models — NeuralFlow AI</title>
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <!-- highlight.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Reused project styles -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/theme.css">
+
+  <!-- Blog styles -->
+  <link rel="stylesheet" href="css/blog.css">
+</head>
+<body>
+  <!-- Particle background -->
+  <canvas id="particle-canvas"></canvas>
+
+  <nav class="blog-nav">
+    <a href="index.html" class="blog-nav-link">&larr; Slide Deck</a>
+    <a href="blog.html" class="blog-nav-link" style="margin-left:1.5rem;">Backprop Blog</a>
+  </nav>
+
+  <main class="blog-main">
+
+    <!-- Hero -->
+    <header class="blog-hero">
+      <div class="blog-container">
+        <span class="badge">Paper Walkthrough</span>
+        <h1>LoLCATs: Linearizing Large Language Models</h1>
+        <p class="subtitle">Low-rank linear conversion via attention transfer — how to turn a quadratic Transformer into a subquadratic model using 0.2% of its parameters.</p>
+      </div>
+    </header>
+
+    <!-- Introduction -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>The Quadratic Attention Problem</h2>
+        <p>Transformer language models owe their power to <strong>softmax attention</strong>, which lets every token attend to every other token in the sequence. But this comes at a cost: computing attention requires $O(n^2)$ time and memory in the sequence length $n$. For long contexts — 128K tokens and beyond — this quadratic scaling becomes the dominant bottleneck.</p>
+        <p><strong>Linear attention</strong> replaces the softmax kernel with learnable feature maps, reducing the cost to $O(n)$. The problem? Directly substituting linear attention into a pretrained Transformer destroys model quality. Prior methods that retrain from scratch require billions of tokens and massive compute.</p>
+        <p>LoLCATs (<strong>Lo</strong>w-rank <strong>L</strong>inear <strong>C</strong>onversion via <strong>A</strong>ttention <strong>T</strong>ransfer) solves this with a two-stage approach: first train linear attention feature maps to <em>mimic</em> softmax attention outputs, then apply low-rank adaptation to recover any remaining quality. The result: linearized 8B, 70B, and 405B models using only 0.2% of parameters and 40M training tokens.</p>
+      </div>
+    </section>
+
+    <!-- Softmax vs Linear Attention -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>Softmax vs. Linear Attention</h2>
+        <p>Standard softmax attention computes the output for token $n$ as a weighted sum over all prior tokens:</p>
+
+        <div class="math-block" data-hover="true">
+          $$y_n = \sum_{i=1}^{n} \frac{\exp\!\left(q_n^\top k_i / \sqrt{d}\right)}{\displaystyle\sum_{j=1}^{n} \exp\!\left(q_n^\top k_j / \sqrt{d}\right)} \cdot v_i$$
+        </div>
+
+        <p>where $q_n, k_i \in \mathbb{R}^d$ are query and key vectors and $v_i \in \mathbb{R}^{d_v}$ is the value vector. The softmax normalizes the attention weights so they sum to one. Computing this requires materializing an $n \times n$ attention matrix — hence the quadratic cost.</p>
+
+        <h3>The Linear Attention Alternative</h3>
+        <p>Linear attention replaces the exponential kernel with <strong>learnable feature maps</strong> $\phi_q$ and $\phi_k$:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\hat{y}_n = \frac{\displaystyle\sum_{i=1}^{n} \phi_q(q_n)^\top \phi_k(k_i) \cdot v_i}{\displaystyle\sum_{i=1}^{n} \phi_q(q_n)^\top \phi_k(k_i)}$$
+        </div>
+
+        <p>The key insight: by the associativity of matrix multiplication, we can rewrite this using <strong>cumulative sums</strong> instead of pairwise dot products. Define the KV state $S_n = \sum_{i=1}^{n} \phi_k(k_i) v_i^\top$ and normalization $z_n = \sum_{i=1}^{n} \phi_k(k_i)$. Then:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\hat{y}_n = \frac{\phi_q(q_n)^\top S_n}{\phi_q(q_n)^\top z_n}$$
+        </div>
+
+        <p>Since $S_n$ and $z_n$ can be updated incrementally ($S_n = S_{n-1} + \phi_k(k_n) v_n^\top$), each new token only requires $O(d \cdot d')$ work — linear in sequence length, not quadratic.</p>
+      </div>
+    </section>
+
+    <!-- Stage 1: Attention Transfer -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>Stage 1: Attention Transfer</h2>
+        <p>The core idea of LoLCATs is to train feature maps $\phi_q$ and $\phi_k$ so that the linear attention output <em>matches</em> the softmax attention output as closely as possible. This is formulated as an <strong>MSE regression problem</strong>, layer by layer.</p>
+
+        <h3>The Training Objective</h3>
+        <p>For a model with $M$ attention layers and $H$ heads per layer, we minimize:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\ell_{\text{MSE}} = \frac{1}{MH} \sum_{m=1}^{M} \sum_{h=1}^{H} \left\| y^{(h,m)} - \hat{y}^{(h,m)} \right\|_2^2$$
+        </div>
+
+        <p>where $y^{(h,m)}$ is the softmax attention output (computed via FlashAttention) and $\hat{y}^{(h,m)}$ is the linear attention output for head $h$ in layer $m$. Only the feature map parameters are trained; all original model weights stay frozen.</p>
+
+        <h3>Feature Map Architecture</h3>
+        <p>Each feature map is parameterized as a learned affine projection followed by a nonlinearity $f$, applied <em>after</em> rotary positional embeddings (RoPE):</p>
+
+        <div class="math-block" data-hover="true">
+          $$\phi_q(q_n) = f\!\left(\text{RoPE}(q_n)\, \widetilde{W}_q + \widetilde{b}_q\right)$$
+        </div>
+
+        <div class="math-block" data-hover="true">
+          $$\phi_k(k_i) = f\!\left(\text{RoPE}(k_i)\, \widetilde{W}_k + \widetilde{b}_k\right)$$
+        </div>
+
+        <p>where $\widetilde{W}_q, \widetilde{W}_k \in \mathbb{R}^{d \times d'}$ and $\widetilde{b}_q, \widetilde{b}_k \in \mathbb{R}^{d'}$. This adds only <strong>16.8M trainable parameters</strong> for an 8B model — roughly 0.2% of total parameters.</p>
+
+        <div class="animated-figure" data-figure="pipeline">
+          <h3>Two-Stage LoLCATs Pipeline</h3>
+          <div class="figure-container" id="pipeline-svg"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sliding Window + Linear Hybrid -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>Hybrid: Sliding Window + Linear Attention</h2>
+        <p>Pure linear attention struggles with <strong>local, spiky attention patterns</strong> — cases where a token attends heavily to a few nearby tokens. LoLCATs addresses this with a hybrid architecture that uses exact softmax attention within a local window and linear attention for everything beyond it.</p>
+
+        <h3>The Hybrid Formulation</h3>
+        <p>For a window size $w$, the output at position $n$ combines a <strong>local softmax window</strong> with a <strong>global linear component</strong>:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\hat{y}_n = \frac{\displaystyle\sum_{i=n-w+1}^{n} \gamma \cdot e^{q_n^\top k_i/\sqrt{d}\, - \,c_n} \cdot v_i \;+\; \phi_q(q_n)^\top \!\sum_{j=1}^{n-w} \phi_k(k_j)\, v_j^\top}{\displaystyle\sum_{i=n-w+1}^{n} \gamma \cdot e^{q_n^\top k_i/\sqrt{d}\, - \,c_n} \;+\; \phi_q(q_n)^\top \!\sum_{j=1}^{n-w} \phi_k(k_j)}$$
+        </div>
+
+        <p>where $c_n$ is a stabilizing constant and $\gamma$ is a learned gate. The local window handles precise nearby attention with $O(w^2 d)$ cost, while the linear component captures long-range dependencies in $O(d \cdot d')$. With a default window of $w = 64$, the total cost remains subquadratic.</p>
+
+        <h3>Generation Complexity</h3>
+        <p>At inference time, generating each new token costs $O(w^2 d + d \cdot d')$ in both time and memory — compared to $O(n \cdot d)$ for full softmax attention, which grows with every token generated.</p>
+
+        <div class="animated-figure" data-figure="hybrid">
+          <h3>Hybrid Attention Architecture</h3>
+          <div class="figure-container" id="hybrid-svg"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stage 2: LoRA -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>Stage 2: Low-Rank Adjusting</h2>
+        <p>After swapping in the trained linear attention layers, some quality gap remains. LoLCATs closes this with <strong>LoRA</strong> (Low-Rank Adaptation) applied to the attention projection matrices.</p>
+
+        <h3>LoRA Weight Update</h3>
+        <p>Each attention projection weight $W$ is updated with a low-rank correction:</p>
+
+        <div class="math-block" data-hover="true">
+          $$W \leftarrow W + \Delta W = W + BA$$
+        </div>
+
+        <p>where $B \in \mathbb{R}^{d \times r}$ and $A \in \mathbb{R}^{r \times d}$ with rank $r \ll d$. With the default $r = 8$, this adds fewer than <strong>0.09% additional parameters</strong>. The LoRA weights are trained on standard next-token prediction loss with the linearized attention layers frozen.</p>
+
+        <h3>Why Two Stages?</h3>
+        <p>The key insight is that attention transfer alone gets you most of the way — it ensures the linear attention layers produce outputs <em>close</em> to what softmax would have produced. But small approximation errors compound across layers. LoRA provides a lightweight correction that lets the rest of the network adjust to these small differences, without retraining from scratch.</p>
+
+        <div class="animated-figure" data-figure="loss-chart">
+          <h3>Training Perplexity</h3>
+          <canvas class="blog-canvas" id="loss-canvas" width="800" height="400"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Block-wise Training -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>Scaling: Block-wise Attention Transfer</h2>
+        <p>Training all layers jointly works for 8B models, but at 70B+ scale a problem emerges: <strong>later layers receive far worse approximations</strong> because errors compound through the network during joint training. Later layers can exhibit 200$\times$ higher MSE than earlier ones.</p>
+
+        <h3>Block-wise MSE</h3>
+        <p>LoLCATs solves this by dividing the $M$ layers into blocks of $b$ layers and training each block independently with its own supervision signal:</p>
+
+        <div class="math-block" data-hover="true">
+          $$\ell_{\text{MSE}}^{\text{block}} = \frac{1}{bH} \sum_{m=i}^{i+b} \sum_{h=1}^{H} \left\| y^{(h,m)} - \hat{y}^{(h,m)} \right\|_2^2$$
+        </div>
+
+        <p>Smaller block sizes $b$ improve quality but increase training time by a factor of $M/b$. The block-wise approach requires precomputing hidden states at block boundaries — but these can be computed once and reused, and blocks can be trained in parallel across GPUs.</p>
+
+        <p>This is what enables linearization at scale: the 405B Llama 3.1 model was linearized with attention transfer in just <strong>5 hours on 14 H100 GPUs</strong>, followed by 16 hours of LoRA finetuning.</p>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section class="blog-section scroll-reveal">
+      <div class="blog-container">
+        <h2>Results</h2>
+        <p>LoLCATs produces the first viable linearizations of 70B and 405B parameter models, while also setting new state-of-the-art for 8B linearization — all at a fraction of prior training cost.</p>
+
+        <h3>Benchmark Comparison</h3>
+
+        <div class="animated-figure" data-figure="mmlu-chart">
+          <h3>5-shot MMLU Accuracy</h3>
+          <canvas class="blog-canvas" id="mmlu-canvas" width="800" height="400"></canvas>
+        </div>
+
+        <p>On Llama 3 8B, LoLCATs achieves <strong>73.1 MMLU</strong> vs. 66.6 for the original Transformer — a 20+ point improvement over prior linearization methods, while using 0.2% of parameters and 0.4% of training tokens. On the 405B model, LoLCATs closes <strong>78.1%</strong> of the quality gap to the original Transformer.</p>
+
+        <h3>Efficiency Gains</h3>
+        <p>The linearized models provide concrete inference speedups: <strong>3$\times$ higher throughput</strong> than FlashAttention-2 and the ability to use <strong>64$\times$ larger batch sizes</strong> on the same hardware, since the KV cache no longer grows linearly with sequence length.</p>
+
+        <div class="blog-stats">
+          <div class="blog-stat glass-card" data-counter data-from="0" data-to="0.2" data-suffix="%" data-decimals="1">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Parameters Trained</div>
+          </div>
+          <div class="blog-stat glass-card" data-counter data-from="0" data-to="40" data-suffix="M tokens" data-decimals="0">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Training Data</div>
+          </div>
+          <div class="blog-stat glass-card" data-counter data-from="0" data-to="405" data-suffix="B" data-decimals="0">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Largest Model</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Reused particle system -->
+  <script src="js/effects.js"></script>
+  <!-- Page logic -->
+  <script src="js/lolcats.js"></script>
+</body>
+</html>

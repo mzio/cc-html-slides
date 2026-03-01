@@ -395,12 +395,17 @@ body {
   color: var(--accent-cyan);
 }
 
-/* Blog link from slide deck */
-.blog-link {
+/* Blog links from slide deck */
+.blog-link-group {
   position: fixed;
   top: 1rem;
   right: 1.5rem;
   z-index: 100;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.blog-link {
   color: var(--accent-cyan);
   text-decoration: none;
   font-size: 0.85rem;
